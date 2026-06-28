@@ -9,6 +9,7 @@
 import Foundation
 import AltStoreCore
 
+#if os(iOS)
 @available(iOS 14, *)
 final class IntentHandler: NSObject, RefreshAllIntentHandling
 {
@@ -158,3 +159,4 @@ private extension IntentHandler
         }
     }
 }
+#endif

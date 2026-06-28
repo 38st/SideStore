@@ -10,6 +10,7 @@ import UIKit
 import SwiftUI
 import AltStoreCore
 
+#if os(iOS)
 typealias SUIButton = SwiftUI.Button
 
 // MARK: - AnisetteServerData
@@ -255,3 +256,5 @@ struct AnisetteServersView: View {
         .navigationTitle("")
     }
 }
+
+#endif

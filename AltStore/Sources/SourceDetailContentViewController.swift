@@ -8,7 +8,9 @@
 
 import UIKit
 import CoreData
+#if os(iOS)
 import SafariServices
+#endif
 import AltStoreCore
 
 import Nuke
@@ -296,8 +298,12 @@ private extension SourceDetailContentViewController
     @IBSegueAction
     func makeNewsViewController(_ coder: NSCoder) -> UIViewController?
     {
+        #if os(iOS)
         let newsViewController = NewsViewController(source: self.source, coder: coder)
         return newsViewController
+        #else
+        return nil
+        #endif
     }
     
     @IBSegueAction
@@ -354,9 +360,13 @@ extension SourceDetailContentViewController
         case (.news, let newsItem as NewsItem):
             if let externalURL = newsItem.externalURL
             {
+                #if os(iOS)
                 let safariViewController = SFSafariViewController(url: externalURL)
                 safariViewController.preferredControlTintColor = newsItem.tintColor
                 self.present(safariViewController, animated: true, completion: nil)
+                #else
+                UIApplication.shared.open(externalURL)
+                #endif
             }
             else if let storeApp = newsItem.storeApp
             {

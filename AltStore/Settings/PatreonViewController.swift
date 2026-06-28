@@ -7,8 +7,11 @@
 //
 
 import UIKit
+#if os(iOS)
 import SafariServices
+#endif
 
+#if os(iOS)
 final class PatreonViewController: UICollectionViewController, UICollectionViewDelegateFlowLayout
 {
     private var prototypeAboutHeader: AboutPatreonHeaderView!
@@ -124,8 +127,8 @@ final class AboutPatreonHeaderView: UICollectionReusableView
         {
             button.clipsToBounds = true
             button.layer.cornerRadius = 16
-        }
     }
+}
     
     override func layoutMarginsDidChange()
     {
@@ -133,4 +136,5 @@ final class AboutPatreonHeaderView: UICollectionReusableView
         self.textView.textContainerInset = UIEdgeInsets(top: self.layoutMargins.left, left: self.layoutMargins.left, bottom: self.layoutMargins.right, right: self.layoutMargins.right)
     }
 }
+#endif
 

@@ -79,43 +79,7 @@ public class InstalledApp: BaseEntity, InstalledAppProtocol
     }
     
     
-    // TODO: integrate the following into the hasUpdate such that altstore sources also work with SideStore, ex: pledge check etc for updates
-    /*
-     
-     
-     
-     
-//        let predicateFormat = [
-//            // isActive && storeApp != nil && latestSupportedVersion != nil
-//            "%K == YES AND %K != nil AND %K != nil",
-//
-//            "AND",
-//
-//            // latestSupportedVersion.version != installedApp.version || latestSupportedVersion.buildVersion != installedApp.storeBuildVersion
-//            //
-//            // We have to also check !(latestSupportedVersion.buildVersion == '' && installedApp.storeBuildVersion == nil)
-//            // because latestSupportedVersion.buildVersion stores an empty string for nil, while installedApp.storeBuildVersion uses NULL.
-//            "(%K != %K OR (%K != %K AND NOT (%K == '' AND %K == nil)))",
-//
-//            "AND",
-//
-//            // !isPledgeRequired || isPledged
-//            "(%K == NO OR %K == YES)"
-//        ].joined(separator: " ")
-//
-//        fetchRequest.predicate = NSPredicate(format: predicateFormat,
-//                                             #keyPath(InstalledApp.isActive), #keyPath(InstalledApp.storeApp), #keyPath(InstalledApp.storeApp.latestSupportedVersion),
-//                                             #keyPath(InstalledApp.storeApp.latestSupportedVersion.version), #keyPath(InstalledApp.version),
-//                                             #keyPath(InstalledApp.storeApp.latestSupportedVersion._buildVersion), #keyPath(InstalledApp.storeBuildVersion),
-//                                             #keyPath(InstalledApp.storeApp.latestSupportedVersion._buildVersion), #keyPath(InstalledApp.storeBuildVersion),
-//                                             #keyPath(InstalledApp.storeApp.isPledgeRequired), #keyPath(InstalledApp.storeApp.isPledged))
-//
-     
 
-    */
-    
-    
-    
     @objc public var hasUpdate: Bool {
         // Basic validation
         guard isActive,
@@ -151,10 +115,11 @@ public class InstalledApp: BaseEntity, InstalledAppProtocol
         if UserDefaults.standard.isBetaUpdatesEnabled,
            ReleaseTracks.betaTracks.contains(latestVersion.channel),
            latestVer == currentVer,         // major.minor.patch are matching
-           // now compare by preRelease and build to break the tie
-           // TODO: since multiple tracks can be independent, when a different version is available on selected track than installed
-           //       we accept it, now ex: if the setup is consistent for upstream merge lets say from alpha to nightly and alpha can never fall behind nightly,
-           //       then the preRelease+build combo will always be incremental and our below not-equals check will still work.
+           // Compare by preRelease and build to break the tie.
+           // Multiple tracks can be independent, so when a different version is available
+           // on the selected track than installed, we accept it. As long as the setup is
+           // consistent for upstream merges (e.g., alpha can never fall behind nightly),
+           // the preRelease+build combo will always be incremental and this check works.
            (latestSemVer!.build != currentSemVer!.build) || (latestSemVer!.preRelease != currentSemVer!.preRelease)
         {
             return true
@@ -318,12 +283,10 @@ public extension InstalledApp
     
     class func fetchAppsForRefreshingAll(in context: NSManagedObjectContext) -> [InstalledApp]
     {
-        let predicate = NSPredicate(format: "(%K == YES AND %K != %@) AND (%K == nil OR %K == NO OR %K == YES)",
+        // Pledge-related fields are retired and always false after decoding.
+        let predicate = NSPredicate(format: "%K == YES AND %K != %@",
                                     #keyPath(InstalledApp.isActive),
-                                    #keyPath(InstalledApp.bundleIdentifier), StoreApp.altstoreAppID,
-                                    #keyPath(InstalledApp.storeApp),
-                                    #keyPath(InstalledApp.storeApp.isPledgeRequired),
-                                    #keyPath(InstalledApp.storeApp.isPledged))
+                                    #keyPath(InstalledApp.bundleIdentifier), StoreApp.altstoreAppID)
         
         var installedApps = InstalledApp.all(satisfying: predicate,
                                              sortedBy: [NSSortDescriptor(keyPath: \InstalledApp.expirationDate, ascending: true)],
@@ -332,20 +295,7 @@ public extension InstalledApp
         if let altStoreApp = InstalledApp.fetchAltStore(in: context)
         {
             // Refresh AltStore last since it causes app to quit.
-            
-            if let storeApp = altStoreApp.storeApp
-            {
-                if !storeApp.isPledgeRequired || storeApp.isPledged
-                {
-                    // Only add AltStore if it's the public version OR if it's the beta and we're pledged to it.
-                    installedApps.append(altStoreApp)
-                }
-            }
-            else
-            {
-                // No associated storeApp, so add it just to be safe.
-                installedApps.append(altStoreApp)
-            }
+            installedApps.append(altStoreApp)
         }
         
         return installedApps
@@ -356,14 +306,11 @@ public extension InstalledApp
         // Date 6 hours before now.
         let date = Date().addingTimeInterval(-1 * 6 * 60 * 60)
         
-        let predicate = NSPredicate(format: "(%K == YES) AND (%K < %@) AND (%K != %@) AND (%K == nil OR %K == NO OR %K == YES)",
+        // Pledge-related fields are retired and always false after decoding.
+        let predicate = NSPredicate(format: "%K == YES AND %K < %@ AND %K != %@",
                                     #keyPath(InstalledApp.isActive),
                                     #keyPath(InstalledApp.refreshedDate), date as NSDate,
-                                    #keyPath(InstalledApp.bundleIdentifier), StoreApp.altstoreAppID,
-                                    #keyPath(InstalledApp.storeApp),
-                                    #keyPath(InstalledApp.storeApp.isPledgeRequired),
-                                    #keyPath(InstalledApp.storeApp.isPledged)
-        )
+                                    #keyPath(InstalledApp.bundleIdentifier), StoreApp.altstoreAppID)
         
         var installedApps = InstalledApp.all(satisfying: predicate,
                                              sortedBy: [NSSortDescriptor(keyPath: \InstalledApp.expirationDate, ascending: true)],
@@ -371,19 +318,7 @@ public extension InstalledApp
         
         if let altStoreApp = InstalledApp.fetchAltStore(in: context), altStoreApp.refreshedDate < date
         {
-            if let storeApp = altStoreApp.storeApp
-            {
-                if !storeApp.isPledgeRequired || storeApp.isPledged
-                {
-                    // Only add AltStore if it's the public version OR if it's the beta and we're pledged to it.
-                    installedApps.append(altStoreApp)
-                }
-            }
-            else
-            {
-                // No associated storeApp, so add it just to be safe.
-                installedApps.append(altStoreApp)
-            }
+            installedApps.append(altStoreApp)
         }
         
         return installedApps
@@ -392,18 +327,14 @@ public extension InstalledApp
 
 public extension InstalledApp
 {
-    // TODO: @mahee96: Do NOT hardcode app's url scheme prefixes as in here
-    //       Need to get it dynamically from the Info.plist of other means
     var openAppURL: URL {
-        let openAppURL = URL(string: "sidestore-" + self.bundleIdentifier + "://")!
+        let openAppURL = URL(string: Bundle.Info.appURLSchemePrefix + self.bundleIdentifier + "://")!
         return openAppURL
     }
     
-    // TODO: @mahee96: Do NOT hardcode app's url scheme prefixes as in here
-    //       Need to get it dynamically from the Info.plist of other means
     class func openAppURL(for app: AppProtocol) -> URL
     {
-        let openAppURL = URL(string: "sidestore-" + app.bundleIdentifier + "://")!
+        let openAppURL = URL(string: Bundle.Info.appURLSchemePrefix + app.bundleIdentifier + "://")!
         return openAppURL
     }
     

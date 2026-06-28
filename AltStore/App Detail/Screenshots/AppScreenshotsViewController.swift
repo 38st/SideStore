@@ -160,12 +160,14 @@ extension AppScreenshotsViewController
     {
         let screenshot = self.dataSource.item(at: indexPath)
         
+        #if os(iOS)
         let previewViewController = PreviewAppScreenshotsViewController(app: self.app)
         previewViewController.currentScreenshot = screenshot
         
         let navigationController = UINavigationController(rootViewController: previewViewController)
         navigationController.modalPresentationStyle = .fullScreen
         self.present(navigationController, animated: true)
+        #endif
     }
 }
 

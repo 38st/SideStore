@@ -45,8 +45,10 @@ final class SourcesViewController: UICollectionViewController
         super.viewDidLoad()
         
         // Ensure large titles
+        #if os(iOS)
         navigationController?.navigationBar.prefersLargeTitles = true
         navigationItem.largeTitleDisplayMode = .automatic
+        #endif
 
         // Set title
         navigationItem.title = "Sources"
@@ -139,9 +141,12 @@ private extension SourcesViewController
     func makeLayout() -> UICollectionViewCompositionalLayout
     {
         var configuration = UICollectionLayoutListConfiguration(appearance: .grouped)
+        #if os(iOS)
         configuration.showsSeparators = false
+        #endif
         configuration.backgroundColor = .clear
         
+        #if os(iOS)
         configuration.trailingSwipeActionsConfigurationProvider = { [weak self] indexPath in
             guard let self else { return UISwipeActionsConfiguration(actions: []) }
             
@@ -179,6 +184,7 @@ private extension SourcesViewController
             
             return config
         }
+        #endif
         
         let layout = UICollectionViewCompositionalLayout.list(using: configuration)
         return layout
@@ -186,14 +192,28 @@ private extension SourcesViewController
     
     func makeDataSource() -> RSTFetchedResultsCollectionViewPrefetchingDataSource<Source, UIImage>
     {
-        // TODO: @mahee96: Need implementation to keep SideStore-Official source always on top
         let fetchRequest = Source.fetchRequest() as NSFetchRequest<Source>
         fetchRequest.returnsObjectsAsFaults = false
-        fetchRequest.sortDescriptors = [NSSortDescriptor(keyPath: \Source.name, ascending: true),
-                                        
+
+        // Pin the official SideStore source to the top, then sort alphabetically by name and identifier.
+        let officialIdentifier = Source.altStoreIdentifier
+        let pinSort = NSSortDescriptor { (a, b) -> ComparisonResult in
+            let aID = (a as? Source)?.identifier
+            let bID = (b as? Source)?.identifier
+            let aIsOfficial = (aID == officialIdentifier)
+            let bIsOfficial = (bID == officialIdentifier)
+
+            if aIsOfficial && !bIsOfficial { return .orderedAscending }
+            if !aIsOfficial && bIsOfficial { return .orderedDescending }
+            return .orderedSame
+        }
+
+        fetchRequest.sortDescriptors = [pinSort,
+                                        NSSortDescriptor(keyPath: \Source.name, ascending: true),
+
                                         // Can't sort by URLs or else app will crash.
                                         // NSSortDescriptor(keyPath: \Source.sourceURL, ascending: true),
-                                        
+
                                         NSSortDescriptor(keyPath: \Source.identifier, ascending: true)]
         
         let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: DatabaseManager.shared.viewContext, sectionNameKeyPath: nil, cacheName: nil)

@@ -150,7 +150,25 @@ final class FetchSourceOperation: ResultOperation<Source>
                         let rawComponents = codingPath.map { $0.intValue?.description ?? $0.stringValue }
                         let pathDescription = rawComponents.joined(separator: " > ")
                         
+                        // Map DecodingError to a user-friendly message.
+                        let userMessage: String
+                        switch error
+                        {
+                        case .keyNotFound(let key, _):
+                            userMessage = String(format: NSLocalizedString("This source is missing a required field: “%@”. The source may be outdated or malformed.", comment: ""), key.stringValue)
+                        case .valueNotFound(_, let context):
+                            userMessage = String(format: NSLocalizedString("This source contains a null value for a required field: %@. The source may be outdated or malformed.", comment: ""), context.codingPath.map { $0.stringValue }.joined(separator: " > "))
+                        case .typeMismatch(_, let context):
+                            userMessage = String(format: NSLocalizedString("This source contains a field with an unexpected type: %@. The source format may be outdated.", comment: ""), context.debugDescription)
+                        case .dataCorrupted(let context):
+                            userMessage = String(format: NSLocalizedString("This source contains corrupted or invalid data: %@. The source format may be unsupported.", comment: ""), context.debugDescription)
+                        @unknown default:
+                            userMessage = NSLocalizedString("This source could not be read due to an invalid or missing field. The source may be outdated or malformed.", comment: "")
+                        }
+
                         var userInfo = nsError.userInfo
+                        userInfo[NSLocalizedDescriptionKey] = userMessage
+                        userInfo[NSUnderlyingErrorKey] = error
                         
                         if let debugDescription = nsError.localizedDebugDescription
                         {
@@ -162,8 +180,6 @@ final class FetchSourceOperation: ResultOperation<Source>
                             userInfo[NSDebugDescriptionErrorKey] = pathDescription
                         }
                         
-                        // TODO: @mahee96: Need to account for invalid/missing json fields error
-                        //                 and show meaningful message to user instead of just showing decoder error
                         throw NSError(domain: nsError.domain, code: nsError.code, userInfo: userInfo)
                     }
                     

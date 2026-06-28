@@ -7,7 +7,9 @@
 //
 
 import UIKit
+#if os(iOS)
 import SafariServices
+#endif
 import Combine
 import AltStoreCore
 
@@ -164,7 +166,9 @@ class SourceDetailViewController: HeaderContentViewController<SourceHeaderView, 
                 
                 if #available(iOS 16, *)
                 {
+                    #if os(iOS)
                     self.navigationItem.rightBarButtonItem?.isHidden = false
+                    #endif
                 }
                 
             case false?:
@@ -174,7 +178,9 @@ class SourceDetailViewController: HeaderContentViewController<SourceHeaderView, 
                 
                 if #available(iOS 16, *)
                 {
+                    #if os(iOS)
                     self.navigationItem.rightBarButtonItem?.isHidden = false
+                    #endif
                 }
                 
             case nil:
@@ -249,9 +255,13 @@ class SourceDetailViewController: HeaderContentViewController<SourceHeaderView, 
     {
         guard let websiteURL = self.source.websiteURL else { return }
         
+        #if os(iOS)
         let safariViewController = SFSafariViewController(url: websiteURL)
         safariViewController.preferredControlTintColor = self.source.effectiveTintColor ?? .altPrimary
         self.present(safariViewController, animated: true, completion: nil)
+        #else
+        UIApplication.shared.open(websiteURL)
+        #endif
     }
 }
 

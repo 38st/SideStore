@@ -7,7 +7,9 @@
 //
 
 import AppIntents
+#if os(iOS)
 import WidgetKit
+#endif
 import AltStoreCore
 
 // Shouldn't conform types we don't own to protocols we don't own, so make custom
@@ -61,17 +63,21 @@ struct InstallIPAIntent: AppIntent, ProgressReportingIntent
             try await Self.startDatabaseIfNeeded()
 
             let temporaryDirectory = FileManager.default.uniqueTemporaryURL()
-            defer { try? FileManager.default.removeItem(at: temporaryDirectory) }
-
             try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
 
             let ipaURL = temporaryDirectory.appendingPathComponent("App.ipa")
             try self.ipaFile.data.write(to: ipaURL)
 
             let intentProgress = self.progress
-            _ = try await AppManager.shared.installIPA(at: ipaURL) { progress in
-                intentProgress.addChild(progress, withPendingUnitCount: 1)
+            do {
+                _ = try await AppManager.shared.installIPA(at: ipaURL) { progress in
+                    intentProgress.addChild(progress, withPendingUnitCount: 1)
+                }
+            } catch {
+                try? FileManager.default.removeItem(at: temporaryDirectory)
+                throw error
             }
+            try? FileManager.default.removeItem(at: temporaryDirectory)
 
             return .result()
         }

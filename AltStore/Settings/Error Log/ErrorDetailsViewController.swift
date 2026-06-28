@@ -9,6 +9,7 @@
 import UIKit
 import AltStoreCore
 
+#if os(iOS)
 class ErrorDetailsViewController: UIViewController
 {
     var loggedError: LoggedError?
@@ -50,3 +51,5 @@ class ErrorDetailsViewController: UIViewController
         self.textView.textContainerInset.right = self.view.layoutMargins.right
     }
 }
+
+#endif

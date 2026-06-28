@@ -259,34 +259,10 @@ extension AppBannerView
                 self.button.countdownDate = nil
                 
             case .install:
-                if let storeApp = app.storeApp, storeApp.isPledgeRequired
-                {
-                    // Pledge required
-                    
-                    if storeApp.isPledged
-                    {
-                        let buttonTitle = NSLocalizedString("Install", comment: "")
-                        self.button.setTitle(buttonTitle.uppercased(), for: .normal)
-                        self.button.accessibilityLabel = String(format: NSLocalizedString("Install %@", comment: ""), app.name)
-                        self.button.accessibilityValue = buttonTitle
-                    }
-                    else
-                    {
-                        let buttonTitle = NSLocalizedString("Pledge", comment: "")
-                        self.button.setTitle(buttonTitle.uppercased(), for: .normal)
-                        self.button.accessibilityLabel = buttonTitle
-                        self.button.accessibilityValue = buttonTitle
-                    }
-                }
-                else
-                {
-                    // Free app
-                    
-                    let buttonTitle = NSLocalizedString("Free", comment: "")
-                    self.button.setTitle(buttonTitle.uppercased(), for: .normal)
-                    self.button.accessibilityLabel = String(format: NSLocalizedString("Download %@", comment: ""), app.name)
-                    self.button.accessibilityValue = buttonTitle
-                }
+                let buttonTitle = NSLocalizedString("Free", comment: "")
+                self.button.setTitle(buttonTitle.uppercased(), for: .normal)
+                self.button.accessibilityLabel = String(format: NSLocalizedString("Download %@", comment: ""), app.name)
+                self.button.accessibilityValue = buttonTitle
                 
                 if let versionDate = app.storeApp?.latestSupportedVersion?.date, versionDate > Date()
                 {
@@ -381,13 +357,20 @@ private extension AppBannerView
             
             if let tintColor, tintColor.isTooBright
             {
+                #if os(iOS)
                 let textVibrancyEffect = UIVibrancyEffect(blurEffect: .init(style: .systemChromeMaterialLight), style: .fill)
+                #else
+                let textVibrancyEffect = UIBlurEffect(style: .regular)
+                #endif
                 self.vibrancyView.effect = textVibrancyEffect
             }
             else
             {
-                // Thinner == more dull
+                #if os(iOS)
                 let textVibrancyEffect = UIVibrancyEffect(blurEffect: .init(style: .systemThinMaterialDark), style: .secondaryLabel)
+                #else
+                let textVibrancyEffect = UIBlurEffect(style: .dark)
+                #endif
                 self.vibrancyView.effect = textVibrancyEffect
             }
         }

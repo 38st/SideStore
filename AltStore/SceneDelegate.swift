@@ -66,8 +66,9 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate
         guard UIApplication.shared.applicationState == .background else { return }
         
         // Make sure to update AppDelegate.applicationDidEnterBackground() as well.
-
-        // TODO: @mahee96: find if we need to stop em_proxy as in altstore?
+        // Stop em_proxy when entering background to release the UDP socket and
+        // avoid unnecessary network activity while the app is not in use.
+        // It will be restarted on foreground entry (see sceneWillEnterForeground).
         if UserDefaults.standard.enableEMPforWireguard {
             stopEMProxy()
         }

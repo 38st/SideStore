@@ -8,14 +8,22 @@
 
 import UIKit
 import SwiftUI
+#if os(iOS)
 import SafariServices
+#endif
+#if os(iOS)
 import MessageUI
+#endif
 import Intents
+#if os(iOS)
 import IntentsUI
+#endif
 
 import SemanticVersion
 import AltStoreCore
 import CAltSign
+
+#if os(iOS)
 import UniformTypeIdentifiers
 
 extension SettingsViewController
@@ -1645,3 +1653,4 @@ extension SettingsViewController: INUIAddVoiceShortcutViewControllerDelegate
         controller.dismiss(animated: true, completion: nil)
     }
 }
+#endif

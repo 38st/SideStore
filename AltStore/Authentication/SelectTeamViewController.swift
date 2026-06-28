@@ -7,10 +7,12 @@
 //
 
 import UIKit
+#if os(iOS)
 import SafariServices
 import MessageUI
-import Intents
 import IntentsUI
+#endif
+import Intents
 
 import AltSign
 
@@ -21,9 +23,11 @@ final class SelectTeamViewController: UITableViewController
     
     private var prototypeHeaderFooterView: SettingsHeaderFooterView!
     
+        #if os(iOS)
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return .lightContent
     }
+    #endif
     
     override func numberOfSections(in tableView: UITableView) -> Int {
         return 1

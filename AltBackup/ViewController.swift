@@ -43,9 +43,11 @@ class ViewController: UIViewController
     private var detailTextLabel: UILabel!
     private var activityIndicatorView: UIActivityIndicatorView!
     
+    #if !os(tvOS)
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return .lightContent
     }
+    #endif
     
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?)
     {

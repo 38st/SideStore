@@ -8,6 +8,7 @@
 
 import Intents
 
+#if os(iOS)
 public class ViewAppIntentHandler: NSObject, ViewAppIntentHandling
 {
     public func provideAppOptionsCollection(for intent: ViewAppIntent, with completion: @escaping (INObjectCollection<App>?, Error?) -> Void)
@@ -29,3 +30,4 @@ public class ViewAppIntentHandler: NSObject, ViewAppIntentHandling
         }
     }
 }
+#endif

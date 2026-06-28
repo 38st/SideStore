@@ -86,7 +86,9 @@ class BrowseViewController: UICollectionViewController, PeekPopPreviewing
                                                                #keyPath(StoreApp.subtitle),
                                                                #keyPath(StoreApp.developerName),
                                                                #keyPath(StoreApp.bundleIdentifier)]
+        #if os(iOS)
         self.navigationItem.searchController = self.dataSource.searchController
+        #endif
         
         self.prototypeCell.contentView.translatesAutoresizingMaskIntoConstraints = false
         
@@ -99,12 +101,14 @@ class BrowseViewController: UICollectionViewController, PeekPopPreviewing
         let collectionViewLayout = self.collectionViewLayout as! UICollectionViewFlowLayout
         collectionViewLayout.minimumLineSpacing = 30
         
+        #if os(iOS)
         (self as PeekPopPreviewing).registerForPreviewing(with: self, sourceView: self.collectionView)
         
         let refreshControl = UIRefreshControl(frame: .zero, primaryAction: UIAction { [weak self] _ in
             self?.updateSources()
         })
         self.collectionView.refreshControl = refreshControl
+        #endif
         
         if self.category != nil, #available(iOS 16, *)
         {
@@ -115,7 +119,9 @@ class BrowseViewController: UICollectionViewController, PeekPopPreviewing
                 }
             ])
             
+            #if os(iOS)
             self.navigationItem.titleMenuProvider = { _ in categoriesMenu }
+            #endif
         }
         
         self.titleSourceIconView = AppIconImageView(style: .circular)
@@ -130,11 +136,15 @@ class BrowseViewController: UICollectionViewController, PeekPopPreviewing
         self.titleStackView.spacing = 4
         self.titleStackView.translatesAutoresizingMaskIntoConstraints = false
         
+        #if os(iOS)
         self.navigationItem.largeTitleDisplayMode = .never
+        #endif
         
         if #available(iOS 16, *)
         {
+            #if os(iOS)
             self.navigationItem.preferredSearchBarPlacement = .automatic
+            #endif
         }
         
         if #available(iOS 15, *)
@@ -308,7 +318,9 @@ private extension BrowseViewController
     func updateSources()
     {
         AppManager.shared.updateAllSources { result in
+            #if os(iOS)
             self.collectionView.refreshControl?.endRefreshing()
+            #endif
             
             guard case .failure(let error) = result else { return }
             

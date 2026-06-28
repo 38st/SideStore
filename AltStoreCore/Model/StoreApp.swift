@@ -192,7 +192,10 @@ public class StoreApp: BaseEntity, Decodable
     // Required for Marketplace apps.
     @NSManaged public private(set) var marketplaceID: String?
 
-    // TODO retire these pledge related fields later coz sidestore doesn't require in-app pledging for patreon content
+    // Retired pledge-related fields. SideStore does not require in-app pledging for Patreon content.
+    // These Core Data attributes are kept for backward compatibility but are always reset to
+    // default values (false/nil) during decoding. Code that checks these fields should treat
+    // them as always-false/nil.
     @NSManaged public var isPledged: Bool
     @NSManaged public private(set) var isPledgeRequired: Bool
     @NSManaged public private(set) var isHiddenWithoutPledge: Bool
@@ -663,11 +666,9 @@ public extension StoreApp
 public extension StoreApp
 {
     class var visibleAppsPredicate: NSPredicate {
-        let predicate = NSPredicate(format: "(%K != %@) AND ((%K == NO) OR (%K == NO) OR (%K == YES))",
-                                    #keyPath(StoreApp.bundleIdentifier), StoreApp.altstoreAppID,
-                                    #keyPath(StoreApp.isPledgeRequired),
-                                    #keyPath(StoreApp.isHiddenWithoutPledge),
-                                    #keyPath(StoreApp.isPledged))
+        // Pledge-related fields are retired and always false/nil after decoding.
+        // The predicate only needs to exclude the AltStore app itself.
+        let predicate = NSPredicate(format: "%K != %@", #keyPath(StoreApp.bundleIdentifier), StoreApp.altstoreAppID)
         return predicate
     }
     

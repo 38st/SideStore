@@ -125,9 +125,11 @@ func enableJITSideJITServer(serverURL: URL, installedApp: InstalledApp, completi
         
         if dataString == "Enabled JIT for '\(installedApp.name)'!" {
             let content = UNMutableNotificationContent()
+            #if !os(tvOS)
             content.title = "JIT Successfully Enabled"
             content.subtitle = "JIT Enabled For \(installedApp.name)"
             content.sound = .default
+            #endif
             
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1, repeats: false)
             let request = UNNotificationRequest(identifier: "EnabledJIT", content: content, trigger: nil)

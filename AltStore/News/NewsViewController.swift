@@ -7,13 +7,16 @@
 //
 
 import UIKit
+#if os(iOS)
 import SafariServices
+#endif
 import Combine
 import CoreData
 import AltStoreCore
 
 import Nuke
 
+#if os(iOS)
 private final class AppBannerFooterView: UICollectionReusableView
 {
     let bannerView = AppBannerView(frame: .zero)
@@ -550,3 +553,5 @@ extension NewsViewController: UIViewControllerPreviewingDelegate
         }
     }
 }
+
+#endif

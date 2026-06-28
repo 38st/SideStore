@@ -13,7 +13,9 @@ import UserNotifications
 import MobileCoreServices
 import Intents
 import Combine
+#if os(iOS)
 import WidgetKit
+#endif
 import AltStoreCore
 import AltSign
 import Minimuxer
@@ -1238,6 +1240,10 @@ private extension AppManager
             }
         }
         
+        // Set the expected number of finish() calls before performing operations
+        // so the idle timer is only re-enabled after the last one completes.
+        group.pendingFinishCount = operations.count
+
         if let authenticationOperation = authenticationOperation
         {
             let awaitAuthenticationOperation = BlockOperation {
@@ -1527,20 +1533,9 @@ private extension AppManager
         ].compactMap { $0 }
         
         group.add(operations)
-        
-        if let storeApp = downloadingApp.storeApp, storeApp.isPledgeRequired
-        {
-            self.run([downloadOperation], context: group.context, requiresSerialQueue: true)
-            
-            if let index = operations.firstIndex(of: downloadOperation)
-            {
-                // Remove downloadOperation from operations to prevent running it twice.
-                operations.remove(at: index)
-            }
-        }
 
         self.run(operations, context: group.context)
-        
+
         return progress
     }
     
@@ -2031,13 +2026,13 @@ private extension AppManager
     
     func finish(_ operation: AppOperation, result: Result<InstalledApp, Error>, group: RefreshGroup, progress: Progress?)
     {
-        // Remove disableIdleTimeout
-        // TODO: This should disable for the last finish() request not the first though for batches
-        //       probably if we are in batch mode, we can count expected no of finishes() to arrive
-        //       and schedule disabling only on last request by matching it with count.
-        DispatchQueue.main.schedule {
-            if UIApplication.shared.isIdleTimerDisabled {       // accept only once if concurrent
-                UIApplication.shared.isIdleTimerDisabled = false
+        // Re-enable the idle timer only when the last finish() call in a batch is received.
+        let isLastFinish = group.decrementPendingFinishCount()
+        if isLastFinish {
+            DispatchQueue.main.schedule {
+                if UIApplication.shared.isIdleTimerDisabled {
+                    UIApplication.shared.isIdleTimerDisabled = false
+                }
             }
         }
 
@@ -2059,7 +2054,9 @@ private extension AppManager
             }
             
             // Ask widgets to be refreshed
+            #if os(iOS)
             WidgetCenter.shared.reloadAllTimelines()
+            #endif
             
             do 
             {
@@ -2123,9 +2120,11 @@ private extension AppManager
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: timeIntervalUntilNotification, repeats: false)
         
         let content = UNMutableNotificationContent()
+        #if !os(tvOS)
         content.title = NSLocalizedString("SideStore Expiring Soon", comment: "")
         content.body = NSLocalizedString("SideStore will expire in 24 hours. Open the app and refresh it to prevent it from expiring.", comment: "")
         content.sound = .default
+        #endif
         
         let request = UNNotificationRequest(identifier: AppManager.expirationWarningNotificationID, content: content, trigger: trigger)
         UNUserNotificationCenter.current().add(request)
@@ -2327,7 +2326,7 @@ private extension AppManager {
         while true {
             if (currentError as? MinimuxerError) == .PairingFile {
                 guard let presentingVC = presentingViewController else {
-                    throw currentError!
+                    throw currentError ?? MinimuxerError.PairingFile
                 }
 
                 let title = isFirstPrompt

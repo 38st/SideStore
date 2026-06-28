@@ -11,6 +11,7 @@ import AltStoreCore
 
 import Nuke
 
+#if os(iOS)
 class PreviewAppScreenshotsViewController: UICollectionViewController
 {
     let app: StoreApp
@@ -186,3 +187,5 @@ private extension PreviewAppScreenshotsViewController
     let navigationController = UINavigationController(rootViewController: previewViewController)
     return navigationController
 }
+
+#endif

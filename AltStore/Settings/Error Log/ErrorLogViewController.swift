@@ -7,16 +7,17 @@
 //
 
 import UIKit
+#if os(iOS)
 import SafariServices
 import QuickLook
+#endif
 import CoreData
 import AltStoreCore
 
 import Nuke
-
-import QuickLook
 import SwiftUI
 
+#if os(iOS)
 final class ErrorLogViewController: UITableViewController, QLPreviewControllerDelegate
 {
     private lazy var dataSource = self.makeDataSource()
@@ -608,3 +609,5 @@ extension ErrorLogViewController
 //        _exportedLogURL = nil
 //    }
 //}
+
+#endif

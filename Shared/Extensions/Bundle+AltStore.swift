@@ -29,6 +29,8 @@ public extension Bundle
         public static let untetherRequired = "ALTFugu14UntetherRequired"
         public static let untetherMinimumiOSVersion = "ALTFugu14UntetherMinimumVersion"
         public static let untetherMaximumiOSVersion = "ALTFugu14UntetherMaximumVersion"
+
+        public static let appURLSchemePrefix = "sidestore-"
     }
 }
 

@@ -12,7 +12,9 @@ import AltStoreCore
 
 class ImportExport {
     
+    #if os(iOS)
     public static var documentPickerHandler: DocumentPickerHandler?
+    #endif
     
     public static func getPreviousBackupURL(_ backupURL: URL) -> URL {
         let backupParentDirectory = backupURL.deletingLastPathComponent()
@@ -71,6 +73,7 @@ class ImportExport {
     public static func importBackup(presentingViewController: UIViewController,
                                     for installedApp: InstalledApp,
                                     completionHandler: @escaping (Result<Void, Error>) -> Void){
+        #if os(iOS)
         guard let backupURL = FileManager.default.backupDirectoryURL(for: installedApp) else {
             return completionHandler(.failure(OperationError.invalidParameters("Error: Backup directory URL not found.")))
         }
@@ -110,6 +113,9 @@ class ImportExport {
         documentPicker.delegate = Self.documentPickerHandler
         // Present the picker
         presentingViewController.present(documentPicker, animated: true, completion: nil)
+        #else
+        completionHandler(.failure(OperationError.invalidParameters("Document picker is not available on tvOS")))
+        #endif
     }
 }
 
@@ -118,6 +124,7 @@ private struct AssociatedKeys {
 }
 
 
+#if os(iOS)
 class DocumentPickerHandler: NSObject, UIDocumentPickerDelegate {
     private let completion: (URL?) -> Void
 
@@ -133,3 +140,4 @@ class DocumentPickerHandler: NSObject, UIDocumentPickerDelegate {
         completion(nil)
     }
 }
+#endif

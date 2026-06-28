@@ -10,6 +10,7 @@ import UIKit
 import CoreData
 import AltStoreCore
 
+#if os(iOS)
 final class AppIDsViewController: UICollectionViewController
 {
     private lazy var dataSource = self.makeDataSource()
@@ -258,3 +259,5 @@ extension AppIDsViewController: UICollectionViewDelegateFlowLayout
         }
     }
 }
+
+#endif

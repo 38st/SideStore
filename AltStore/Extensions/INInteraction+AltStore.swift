@@ -8,6 +8,7 @@
 
 import Intents
 
+#if os(iOS)
 extension INInteraction
 {
     static func refreshAllApps() -> INInteraction
@@ -19,3 +20,4 @@ extension INInteraction
         return interaction
     }
 }
+#endif

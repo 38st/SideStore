@@ -298,9 +298,17 @@ public extension Source
     var isRecommended: Bool {
         guard let recommendedSources = UserDefaults.shared.recommendedSources else { return false }
         
-        // TODO: Support alternate URLs
         let isRecommended = recommendedSources.contains { source in
-            return source.identifier == self.identifier || source.sourceURL?.absoluteString.lowercased() == self.sourceURL.absoluteString.lowercased()
+            if source.identifier == self.identifier { return true }
+
+            let selfURL = self.sourceURL.absoluteString.lowercased()
+            if source.sourceURL?.absoluteString.lowercased() == selfURL { return true }
+
+            if let alternateURLs = source.alternateURLs {
+                return alternateURLs.contains { $0.absoluteString.lowercased() == selfURL }
+            }
+
+            return false
         }
         return isRecommended
     }

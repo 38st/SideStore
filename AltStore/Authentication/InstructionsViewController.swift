@@ -17,9 +17,11 @@ final class InstructionsViewController: UIViewController
     @IBOutlet private var contentStackView: UIStackView!
     @IBOutlet private var dismissButton: UIButton!
     
+    #if os(iOS)
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return .lightContent
     }
+    #endif
     
     override func viewDidLoad()
     {
@@ -36,7 +38,9 @@ final class InstructionsViewController: UIViewController
         
         if self.showsBottomButton
         {
+            #if os(iOS)
             self.navigationItem.hidesBackButton = true
+            #endif
         }
         else
         {

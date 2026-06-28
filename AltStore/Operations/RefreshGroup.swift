@@ -27,6 +27,10 @@ final class RefreshGroup: NSObject
     
     private var isFinished = false
     
+    // Tracks the number of pending finish() calls expected in a batch operation.
+    // The idle timer is only re-enabled when this reaches 0.
+    private(set) var pendingFinishCount: Int = 0
+
     private let dispatchGroup = DispatchGroup()
     private var operations: [Foundation.Operation] = []
     
@@ -76,6 +80,15 @@ final class RefreshGroup: NSObject
     func cancel()
     {
         self.operations.forEach { $0.cancel() }
+    }
+
+    /// Decrements the pending finish count. Returns `true` when all expected
+    /// finish() calls have been received (i.e., the batch is complete).
+    @discardableResult
+    func decrementPendingFinishCount() -> Bool
+    {
+        self.pendingFinishCount = max(0, self.pendingFinishCount - 1)
+        return self.pendingFinishCount == 0
     }
 }
 

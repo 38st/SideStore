@@ -53,7 +53,11 @@ class AppCardCollectionViewCell: UICollectionViewCell
         self.bannerView = AppBannerView(frame: .zero)
         self.bannerView.layoutMargins.bottom = 0
         
+        #if os(iOS)
         let vibrancyEffect = UIVibrancyEffect(blurEffect: UIBlurEffect(style: .systemChromeMaterial), style: .secondaryLabel)
+        #else
+        let vibrancyEffect = UIBlurEffect(style: .regular)
+        #endif
         let captionVibrancyView = UIVisualEffectView(effect: vibrancyEffect)
         
         self.captionLabel = UILabel(frame: .zero)

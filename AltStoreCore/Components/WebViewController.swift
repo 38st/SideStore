@@ -7,6 +7,7 @@
 //
 
 import UIKit
+#if os(iOS)
 import WebKit
 import Combine
 
@@ -354,3 +355,4 @@ private extension WebViewController
         self.parent?.dismiss(animated: true)
     }
 }
+#endif

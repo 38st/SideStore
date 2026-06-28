@@ -76,8 +76,15 @@ class FetchProvisioningProfilesOperation: ResultOperation<[String: ALTProvisioni
                             {
                             case .failure(let e): error = e
                             case .success(let profile):
-                                // Use customized bundle ID if applicable
-                                let updatedExtensionBundleId = appExtension.bundleIdentifier.replacingOccurrences(of: app.bundleIdentifier, with: effectiveBundleId)
+                                // Use customized bundle ID if applicable — replace only the leading prefix
+                                // so we never corrupt extension IDs that contain the parent ID more than once.
+                                let extensionID = appExtension.bundleIdentifier
+                                let updatedExtensionBundleId: String
+                                if extensionID.hasPrefix(app.bundleIdentifier) {
+                                    updatedExtensionBundleId = effectiveBundleId + extensionID.dropFirst(app.bundleIdentifier.count)
+                                } else {
+                                    updatedExtensionBundleId = extensionID
+                                }
                                 profiles[updatedExtensionBundleId] = profile
                             }
                             
@@ -175,22 +182,6 @@ extension FetchProvisioningProfilesOperation
                 // or if installedApp.team is nil but resignedBundleIdentifier contains the team's identifier.
                 let teamsMatch = installedApp.team?.identifier == team.identifier || (installedApp.team == nil && installedApp.resignedBundleIdentifier.contains(team.identifier))
                 
-                // TODO: @mahee96: Try to keep the debug build and release build operations similar, refactor later with proper reasoning
-                //                 for now, restricted it to debug on simulator only
-                #if DEBUG && targetEnvironment(simulator)
-
-                if app.isAltStoreApp
-                {
-                    // Use legacy bundle ID format for AltStore.
-                    preferredBundleID = teamsMatch ? installedApp.resignedBundleIdentifier : nil
-                }
-                else
-                {
-                    preferredBundleID = teamsMatch ? installedApp.resignedBundleIdentifier : nil
-                }
-
-                #else
-                
                 if teamsMatch
                 {
                     // This app is already installed with the same team, so use the same resigned bundle identifier as before.
@@ -202,8 +193,6 @@ extension FetchProvisioningProfilesOperation
                 {
                     preferredBundleID = nil
                 }
-                
-                #endif
             }
             else
             {
@@ -224,17 +213,7 @@ extension FetchProvisioningProfilesOperation
                 let parentBundleID = parentApp?.bundleIdentifier ?? app.bundleIdentifier
                 let effectiveParentBundleID = self.context.bundleIdentifier
 
-                let updatedParentBundleID: String
-
-                if app.isAltStoreApp
-                {
-                    // Use legacy bundle ID format for AltStore (and its extensions).
-                    updatedParentBundleID = effectiveParentBundleID + "." + team.identifier // Append just team identifier to make it harder to track.
-                }
-                else
-                {
-                    updatedParentBundleID = effectiveParentBundleID + "." + team.identifier // Append just team identifier to make it harder to track.
-                }
+                let updatedParentBundleID = effectiveParentBundleID + "." + team.identifier
 
                 if let parentApp = parentApp,
                    app.bundleIdentifier.hasPrefix(parentBundleID + ".")

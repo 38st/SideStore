@@ -12,7 +12,7 @@ import UniformTypeIdentifiers
 import Minimuxer
 
 @MainActor
-final class PairingFileManager: NSObject, UIDocumentPickerDelegate {
+final class PairingFileManager: NSObject {
     static let shared = PairingFileManager()
     static let pairingFileName = "ALTPairingFile.mobiledevicepairing"
 
@@ -47,15 +47,16 @@ final class PairingFileManager: NSObject, UIDocumentPickerDelegate {
             self.completion = nil
         }
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: NSLocalizedString("Help", comment: ""), style: .default) { _ in
+        alert.addAction(UIAlertAction(title: NSLocalizedString("Help", comment: ""), style: .default) { [weak self] _ in
             if let url = URL(string: "https://docs.sidestore.io/docs/advanced/pairing-file") { UIApplication.shared.open(url) }
             if completion == nil {
-                sleep(2); exit(0)
+                DispatchQueue.global().asyncAfter(deadline: .now() + 2) { exit(0) }
             } else {
-                completion?(nil)
+                self?.completion?(nil)
             }
         })
         alert.addAction(UIAlertAction(title: NSLocalizedString("OK", comment: ""), style: .default) { _ in
+            #if os(iOS)
             var types = UTType.types(tag: "plist", tagClass: .filenameExtension, conformingTo: nil)
             types.append(contentsOf: UTType.types(tag: "mobiledevicepairing", tagClass: .filenameExtension, conformingTo: .data))
             types.append(.xml)
@@ -63,10 +64,11 @@ final class PairingFileManager: NSObject, UIDocumentPickerDelegate {
             picker.delegate = self
             picker.shouldShowFileExtensions = true
             vc.present(picker, animated: true)
+            #endif
             UserDefaults.standard.isPairingReset = false
         })
-        alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel) { _ in
-            completion?(nil)
+        alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel) { [weak self] _ in
+            self?.completion?(nil)
         })
         vc.present(alert, animated: true)
     }
@@ -83,6 +85,7 @@ final class PairingFileManager: NSObject, UIDocumentPickerDelegate {
         }
     }
 
+    #if os(iOS)
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
         let url = urls[0]
         let isSecuredURL = url.startAccessingSecurityScopedResource() == true
@@ -117,7 +120,7 @@ final class PairingFileManager: NSObject, UIDocumentPickerDelegate {
                     rootVC.start_minimuxer_threads(pairingString)
                 }
             } else {
-                completion?(url)
+                completion?(documentsPath)
             }
         } catch {
             if completion == nil {
@@ -141,4 +144,9 @@ final class PairingFileManager: NSObject, UIDocumentPickerDelegate {
             completion?(nil)
         }
     }
+    #endif
 }
+
+#if os(iOS)
+extension PairingFileManager: UIDocumentPickerDelegate {}
+#endif

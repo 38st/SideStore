@@ -141,7 +141,9 @@ private extension AddSourceViewController
                 
             case .preview:
                 var configuration = UICollectionLayoutListConfiguration(appearance: .grouped)
-                configuration.showsSeparators = false
+                #if os(iOS)
+        configuration.showsSeparators = false
+        #endif
                 configuration.backgroundColor = .clear
                 
                 if !self.viewModel.sourceURLs.isEmpty && self.viewModel.isShowingPreviewStatus
@@ -169,7 +171,9 @@ private extension AddSourceViewController
                 
             case .recommended:
                 var configuration = UICollectionLayoutListConfiguration(appearance: .grouped)
-                configuration.showsSeparators = false
+                #if os(iOS)
+        configuration.showsSeparators = false
+        #endif
                 configuration.backgroundColor = .clear
                 
                 switch self.fetchRecommendedSourcesResult

@@ -45,6 +45,7 @@ final class AppViewController: UIViewController
     private var _backgroundBlurEffect: UIBlurEffect?
     private var _backgroundBlurTintColor: UIColor?
     
+    #if os(iOS)
     private var _preferredStatusBarStyle: UIStatusBarStyle = .default
     private var isNavigationBarHidden = true
     
@@ -59,6 +60,7 @@ final class AppViewController: UIViewController
             return _preferredStatusBarStyle
         }
     }
+    #endif
     
     override func viewDidLoad()
     {
@@ -90,7 +92,9 @@ final class AppViewController: UIViewController
         self.contentViewController.view.layer.masksToBounds = true
         
         self.contentViewController.tableView.panGestureRecognizer.require(toFail: self.scrollView.panGestureRecognizer)
+        #if os(iOS)
         self.contentViewController.appDetailCollectionViewController.collectionView.panGestureRecognizer.require(toFail: self.scrollView.panGestureRecognizer)
+        #endif
         self.contentViewController.tableView.showsVerticalScrollIndicator = false
         
         // Bring to front so the scroll indicators are visible.
@@ -221,13 +225,20 @@ final class AppViewController: UIViewController
         {
             statusBarHeight = 20
         }
-        else if let statusBarManager = (self.view.window ?? self.presentedViewController?.view.window)?.windowScene?.statusBarManager
-        {
-            statusBarHeight = statusBarManager.statusBarFrame.height
-        }
         else
         {
+            #if os(iOS)
+            if let statusBarManager = (self.view.window ?? self.presentedViewController?.view.window)?.windowScene?.statusBarManager
+            {
+                statusBarHeight = statusBarManager.statusBarFrame.height
+            }
+            else
+            {
+                statusBarHeight = 0
+            }
+            #else
             statusBarHeight = 0
+            #endif
         }
 
         let cornerRadius = self.contentViewControllerShadowView.layer.cornerRadius
@@ -465,6 +476,7 @@ private extension AppViewController
         
         self.updateNavigationBarAppearance(isHidden: false)
         
+        #if os(iOS)
         if self.traitCollection.userInterfaceStyle == .dark
         {
             self._preferredStatusBarStyle = .lightContent
@@ -478,6 +490,7 @@ private extension AppViewController
         {
             self.navigationController?.setNeedsStatusBarAppearanceUpdate()
         }
+        #endif
     }
     
     func hideNavigationBar()
@@ -492,12 +505,14 @@ private extension AppViewController
         
         self.updateNavigationBarAppearance(isHidden: true)
         
+        #if os(iOS)
         self._preferredStatusBarStyle = .lightContent
         
         if #unavailable(iOS 17)
         {
             self.navigationController?.setNeedsStatusBarAppearanceUpdate()
         }
+        #endif
     }
     
     // Copied from HeaderContentViewController
@@ -647,8 +662,15 @@ extension AppViewController
     {
         let previousProgress = AppManager.shared.installationProgress(for: installedApp)
         guard previousProgress == nil else {
-            //TODO: Handle cancellation
-            //previousProgress?.cancel()
+            let title = NSLocalizedString("Installation in Progress", comment: "")
+            let message = NSLocalizedString("An installation or update is already in progress for this app. Would you like to cancel it and start a new update?", comment: "")
+            let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)
+            alertController.addAction(UIAlertAction(title: NSLocalizedString("Cancel Current & Update", comment: ""), style: .destructive) { _ in
+                previousProgress?.cancel()
+                self.updateApp(installedApp, to: version)
+            })
+            alertController.addAction(UIAlertAction(title: NSLocalizedString("Keep Current", comment: ""), style: .cancel))
+            self.present(alertController, animated: true)
             return
         }
         

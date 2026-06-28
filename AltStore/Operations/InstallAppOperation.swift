@@ -201,8 +201,10 @@ final class InstallAppOperation: ResultOperation<InstalledApp>
                             print("Notifications are enabled")
 
                             let content = UNMutableNotificationContent()
+                            #if !os(tvOS)
                             content.title = "Refreshing..."
                             content.body = "SideStore will automatically move to the homescreen to finish refreshing!"
+                            #endif
                             let notification = UNNotificationRequest(identifier: Bundle.Info.appbundleIdentifier + ".FinishRefreshNotification", content: content, trigger: UNTimeIntervalNotificationTrigger(timeInterval: 2, repeats: false))
                             UNUserNotificationCenter.current().add(notification)
                             break

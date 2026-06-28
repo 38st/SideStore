@@ -13,7 +13,7 @@ import MarkdownKit
 struct MarkdownManager
 {
     struct Fonts{
-        static let body: UIFont     = .systemFont(ofSize: UIFont.systemFontSize)
+        static let body: UIFont     = .systemFont(ofSize: 16.0)
 //        static let body: UIFont     = .systemFont(ofSize: UIFont.labelFontSize)
         
         static let header: UIFont   = .boldSystemFont(ofSize: 14)
@@ -28,7 +28,11 @@ struct MarkdownManager
             traitCollection.userInterfaceStyle == .dark ? UIColor.white : UIColor.black
         }
         static let bold = UIColor { traitCollection in
+            #if os(iOS)
             traitCollection.userInterfaceStyle == .dark ? UIColor.lightText : UIColor.darkText
+            #else
+            traitCollection.userInterfaceStyle == .dark ? UIColor.white : UIColor.black
+            #endif
         }
     }
     
@@ -156,7 +160,9 @@ final class CollapsingMarkdownView: UIView {
     
     private func initialize() {
         // Configure text view
+        #if os(iOS)
         textView.isEditable = false
+        #endif
         textView.isScrollEnabled = false
         textView.textContainerInset = .zero
         textView.textContainer.lineFragmentPadding = 0
@@ -168,7 +174,9 @@ final class CollapsingMarkdownView: UIView {
         textView.delegate = self
         
         // Important: This prevents selection handles from appearing
+        #if os(iOS)
         textView.dataDetectorTypes = .link
+        #endif
     
         // Configure markdown parser
         configureMarkdownParser()

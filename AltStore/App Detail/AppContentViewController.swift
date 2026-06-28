@@ -52,7 +52,11 @@ final class AppContentViewController: UITableViewController
     @IBOutlet private(set) var appScreenshotsViewController: AppScreenshotsViewController!
     @IBOutlet private var appScreenshotsHeightConstraint: NSLayoutConstraint!
     
+    #if os(iOS)
     @IBOutlet private(set) var appDetailCollectionViewController: AppDetailCollectionViewController!
+    #else
+    private(set) var appDetailCollectionViewController: UIViewController?
+    #endif
     @IBOutlet private var appDetailCollectionViewHeightConstraint: NSLayoutConstraint!
     
     override func viewDidLoad() {
@@ -96,12 +100,14 @@ final class AppContentViewController: UITableViewController
             needsTableViewUpdate = true
         }
         
+        #if os(iOS)
         let permissionsHeight = self.appDetailCollectionViewController.collectionView.contentSize.height
         if self.appDetailCollectionViewHeightConstraint.constant != permissionsHeight && permissionsHeight > 0
         {
             self.appDetailCollectionViewHeightConstraint.constant = permissionsHeight
             needsTableViewUpdate = true
         }
+        #endif
         
         if needsTableViewUpdate
         {
@@ -145,9 +151,13 @@ private extension AppContentViewController
     @IBSegueAction
     func makeAppDetailCollectionViewController(_ coder: NSCoder, sender: Any?) -> UIViewController?
     {
+        #if os(iOS)
         let appDetailViewController = AppDetailCollectionViewController(app: self.app, coder: coder)
         self.appDetailCollectionViewController = appDetailViewController
         return appDetailViewController
+        #else
+        return nil
+        #endif
     }
 }
 

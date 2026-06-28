@@ -36,7 +36,9 @@ final class AuthenticationViewController: UIViewController
             Task{
                 let sourceURL = UserDefaults.standard.menuAnisetteList
                 do{
+                    #if os(iOS)
                     _ = try await AnisetteViewModel.getListOfServers(serverSource: sourceURL)
+                    #endif
                     print("AuthenticationViewController: Server list refresh request completed for sourceURL: \(sourceURL)")
                 }catch{
                     print("AuthenticationViewController: Server list refresh request Failed for sourceURL: \(sourceURL) Error: \(error)")

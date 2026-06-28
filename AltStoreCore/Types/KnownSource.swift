@@ -12,6 +12,7 @@ public struct KnownSource: Decodable
 {
     public var identifier: String
     public var sourceURL: URL?
+    public var alternateURLs: [URL]?
     public var bundleIDs: [String]?
 }
 
@@ -21,6 +22,7 @@ private extension KnownSource
         let dictionary: [String: Any?] = [
             KnownSource.CodingKeys.identifier.stringValue: identifier,
             KnownSource.CodingKeys.sourceURL.stringValue: self.sourceURL?.absoluteString,
+            KnownSource.CodingKeys.alternateURLs.stringValue: self.alternateURLs?.map { $0.absoluteString },
             KnownSource.CodingKeys.bundleIDs.stringValue: self.bundleIDs
         ]
         
@@ -37,6 +39,11 @@ private extension KnownSource
             self.sourceURL = URL(string: sourceURLString)
         }
         
+        if let alternateURLStrings = dictionary[CodingKeys.alternateURLs.stringValue] as? [String]
+        {
+            self.alternateURLs = alternateURLStrings.compactMap { URL(string: $0) }
+        }
+
         let bundleIDs = dictionary[CodingKeys.bundleIDs.stringValue] as? [String]
         self.bundleIDs = bundleIDs
     }

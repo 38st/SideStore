@@ -168,6 +168,7 @@ final class RemoveAppExtensionsOperation: ResultOperation<Void>
             let suiview = popoverContentController.view!
             suiview.translatesAutoresizingMaskIntoConstraints = false
             
+            #if os(iOS)
             popoverContentController.modalPresentationStyle = .popover
             
             if let popoverPresentationController = popoverContentController.popoverPresentationController {
@@ -183,6 +184,11 @@ final class RemoveAppExtensionsOperation: ResultOperation<Void>
                     OperationError.invalidParameters("RemoveAppExtensionsOperation: popoverContentController.popoverPresentationController is nil"))
                 )
             }
+            #else
+            DispatchQueue.main.async {
+                presentingViewController.present(popoverContentController, animated: true)
+            }
+            #endif
         })
         
         return alertController

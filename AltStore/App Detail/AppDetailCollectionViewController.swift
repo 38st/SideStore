@@ -11,6 +11,7 @@ import SwiftUI
 import CoreData
 import AltStoreCore
 
+#if os(iOS)
 extension AppDetailCollectionViewController
 {
     private enum Section: Int
@@ -298,3 +299,5 @@ extension AppDetailCollectionViewController
         return false
     }
 }
+
+#endif

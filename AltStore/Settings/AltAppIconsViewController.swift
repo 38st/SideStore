@@ -12,6 +12,7 @@ import SwiftUI
 import AltSign
 import AltStoreCore
 
+#if os(iOS)
 extension UIApplication
 {
     static let didChangeAppIconNotification = Notification.Name("io.sidestore.AppManager.didChangeAppIcon")
@@ -229,3 +230,5 @@ extension AltAppIconsViewController
     let navigationController = UINavigationController(rootViewController: altAppIconsViewController)
     return navigationController
 }
+
+#endif

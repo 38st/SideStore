@@ -12,6 +12,7 @@ import SwiftUI
 import AltSign
 import AltStoreCore
 
+#if os(iOS)
 @available(iOS 15, *)
 extension ReviewPermissionsViewController
 {
@@ -359,3 +360,5 @@ extension ReviewPermissionsViewController
     let navigationController = UINavigationController(rootViewController: reviewPermissionsViewController)
     return navigationController
 }
+
+#endif

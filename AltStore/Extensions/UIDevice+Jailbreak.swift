@@ -7,7 +7,9 @@
 //
 
 import UIKit
+#if os(iOS)
 import ARKit
+#endif
 
 extension UIDevice
 {

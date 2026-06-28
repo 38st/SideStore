@@ -39,8 +39,10 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
     
+    #if os(iOS)
     private let intentHandler = IntentHandler()
     private let viewAppIntentHandler = ViewAppIntentHandler()
+    #endif
     
     public let consoleLog = ConsoleLog()
 
@@ -99,7 +101,10 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         self.setTintColor()
         self.prepareImageCache()
 
-        // TODO: @mahee96: find if we need to start em_proxy as in altstore?
+        // Start em_proxy (WireGuard loopback proxy) on app launch if enabled.
+        // The Rust start_emotional_damage() is idempotent — it skips if already running.
+        // This is intentionally conditional on enableEMPforWireguard because em_proxy
+        // is only needed for WireGuard-based connectivity, not for all installations.
         if UserDefaults.standard.enableEMPforWireguard {
             startEMProxy(bind_addr: AppConstants.Proxy.serverURL)
         }
@@ -126,7 +131,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     func applicationDidEnterBackground(_ application: UIApplication)
     {
         // Make sure to update SceneDelegate.sceneDidEnterBackground() as well.
-        // TODO: @mahee96: find if we need to stop em_proxy as in altstore?
+        // Stop em_proxy when entering background to release the UDP socket and
+        // avoid unnecessary network activity while the app is not in use.
+        // It will be restarted on foreground entry (see applicationWillEnterForeground).
         if UserDefaults.standard.enableEMPforWireguard {
             stopEMProxy()
         }
@@ -168,8 +175,10 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     {
         switch intent
         {
+        #if os(iOS)
         case is RefreshAllIntent: return self.intentHandler
         case is ViewAppIntent: return self.viewAppIntentHandler
+        #endif
         default: return nil
         }
     }
@@ -269,8 +278,9 @@ private extension AppDelegate
 
             if UIApplication.shared.applicationState == .active {
                 NotificationCenter.default.post(name: AppDelegate.importAppDeepLinkNotification, object: nil, userInfo: [AppDelegate.importAppDeepLinkURLKey: ipaURL])
-            } else {
-                // Defer until the app is active (cold launch) — see applicationDidBecomeActive.
+            } else if UIApplication.shared.connectedScenes.isEmpty {
+                // Defer until the app is active (cold launch, non-scene lifecycle) — see applicationDidBecomeActive.
+                // On scene-based apps the SceneDelegate handles cold-launch deferral instead.
                 self.pendingImportIPAURL = ipaURL
             }
 
@@ -391,8 +401,10 @@ extension AppDelegate
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: threeHours, repeats: false)
             
             let content = UNMutableNotificationContent()
+            #if !os(tvOS)
             content.title = NSLocalizedString("App Refresh Tip", comment: "")
             content.body = NSLocalizedString("The more you open SideStore, the more chances it's given to refresh apps in the background.", comment: "")
+            #endif
             
             let request = UNNotificationRequest(identifier: "background-refresh-reminder5", content: content, trigger: trigger)
             UNUserNotificationCenter.current().add(request)
@@ -514,9 +526,11 @@ private extension AppDelegate
                     }
                     
                     let content = UNMutableNotificationContent()
+                    #if !os(tvOS)
                     content.title = NSLocalizedString("New Update Available", comment: "")
                     content.body = String(format: NSLocalizedString("%@ %@ is now available for download.", comment: ""), update.name, latestSupportedVersion.localizedVersion)
                     content.sound = .default
+                    #endif
                     
                     let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
                     UNUserNotificationCenter.current().add(request)
@@ -529,6 +543,7 @@ private extension AppDelegate
                     
                     let content = UNMutableNotificationContent()
                     
+                    #if !os(tvOS)
                     if let app = newsItem.storeApp
                     {
                         content.title = String(format: NSLocalizedString("%@ News", comment: ""), app.name)
@@ -540,6 +555,7 @@ private extension AppDelegate
                     
                     content.body = newsItem.title
                     content.sound = .default
+                    #endif
                     
                     let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
                     UNUserNotificationCenter.current().add(request)

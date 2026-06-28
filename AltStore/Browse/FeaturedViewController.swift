@@ -105,10 +105,16 @@ class FeaturedViewController: UICollectionViewController
             return nil
         }
         
+        #if os(iOS)
         self.navigationItem.searchController = self.searchController
+        #endif
+        #if os(iOS)
         self.navigationItem.hidesSearchBarWhenScrolling = true
+        #endif
         
+        #if os(iOS)
         self.navigationItem.largeTitleDisplayMode = .always
+        #endif
     }
     
     override func viewDidAppear(_ animated: Bool) 
@@ -613,7 +619,11 @@ extension FeaturedViewController
             let headerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: kind, for: indexPath) as! UICollectionViewListCell
             
             var content: UIListContentConfiguration = if #available(iOS 15, *) {
+                #if os(iOS)
                 .prominentInsetGroupedHeader()
+                #else
+                .groupedHeader()
+                #endif
             }
             else {
                 .groupedHeader()
@@ -682,6 +692,7 @@ extension FeaturedViewController
     }
 }
 
+#if os(iOS)
 @available(iOS 17, *)
 #Preview(traits: .portrait) {
     DatabaseManager.shared.startForPreview()
@@ -743,3 +754,4 @@ extension FeaturedViewController
     
     return viewController
 }
+#endif

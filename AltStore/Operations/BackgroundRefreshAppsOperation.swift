@@ -230,8 +230,10 @@ private extension BackgroundRefreshAppsOperation
                     throw error
                 }
                 
+                #if !os(tvOS)
                 content.title = NSLocalizedString("Refreshed Apps", comment: "")
                 content.body = NSLocalizedString("All apps have been refreshed.", comment: "")
+                #endif
             }
             catch ~OperationError.Code.noWiFi, ~RefreshErrorCode.noInstalledApps
             {
@@ -248,8 +250,12 @@ private extension BackgroundRefreshAppsOperation
 
                 Logger.sideload.error("Failed to refresh apps in background. \(error.localizedDescription, privacy: .public)")
                 
+                #if !os(tvOS)
                 content.title = NSLocalizedString("Failed to Refresh Apps", comment: "")
                 content.body = error.localizedDescription
+                #else
+                _ = error
+                #endif
 
                 shouldPresentAlert = true
             }

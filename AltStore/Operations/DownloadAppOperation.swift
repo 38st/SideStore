@@ -7,7 +7,9 @@
 //
 
 import Foundation
+#if os(iOS)
 import WebKit
+#endif
 import UniformTypeIdentifiers
 import AltStoreCore
 import AltSign

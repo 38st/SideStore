@@ -289,6 +289,7 @@ private extension VerifyAppOperation
     @MainActor @available(iOS 15, *)
     func review(_ permissions: [ALTEntitlement], for app: AppProtocol, mode: PermissionReviewMode, presentingViewController: UIViewController) async throws
     {
+        #if os(iOS)
         let reviewPermissionsViewController = ReviewPermissionsViewController(app: app, permissions: permissions, mode: mode)
         let navigationController = UINavigationController(rootViewController: reviewPermissionsViewController)
         
@@ -303,5 +304,8 @@ private extension VerifyAppOperation
             
             presentingViewController.present(navigationController, animated: true)
         }
+        #else
+        throw OperationError.invalidParameters("Permission review not available on tvOS")
+        #endif
     }
 }

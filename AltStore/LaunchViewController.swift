@@ -8,7 +8,9 @@
 
 import UIKit
 
+#if os(iOS)
 import WidgetKit
+#endif
 
 import AltSign
 import AltStoreCore
@@ -186,7 +188,9 @@ extension LaunchViewController {
             toastView.show(in: self.destinationViewController!.selectedViewController ?? self.destinationViewController!)
         }
         updateKnownSources()
+        #if os(iOS)
         WidgetCenter.shared.reloadAllTimelines()
+        #endif
         didFinishLaunching = true
         
         let destinationVC = destinationViewController!
@@ -255,7 +259,11 @@ final class SplashView: UIView {
 
     init(frame: CGRect, appName: String) {
         super.init(frame: frame)
+        #if os(iOS)
         backgroundColor = .systemBackground
+        #else
+        backgroundColor = .black
+        #endif
         setupIcon()
         setupTitle(appName: appName)
     }

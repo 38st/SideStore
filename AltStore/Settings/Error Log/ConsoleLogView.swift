@@ -7,6 +7,7 @@
 //
 import SwiftUI
 
+#if os(iOS)
 class ConsoleLogViewModel: ObservableObject {
     @Published var logLines: [String] = []
     
@@ -224,3 +225,5 @@ extension Array {
         indices.contains(index) ? self[index] : nil
     }
 }
+
+#endif

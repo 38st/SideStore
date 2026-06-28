@@ -83,9 +83,11 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
         self.collectionView.dataSource = self.dataSource
         self.collectionView.prefetchDataSource = self.dataSource
         self.dataSource.contentView = self.collectionView
+        #if os(iOS)
         self.collectionView.dragDelegate = self
         self.collectionView.dropDelegate = self
         self.collectionView.dragInteractionEnabled = true
+        #endif
                 
         self.prototypeUpdateCell = UpdateCollectionViewCell.instantiate(with: UpdateCollectionViewCell.nib)
         self.prototypeUpdateCell.contentView.translatesAutoresizingMaskIntoConstraints = false
@@ -95,11 +97,17 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
         self.collectionView.register(InstalledAppsCollectionHeaderView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: "ActiveAppsHeader")
         self.collectionView.register(InstalledAppsCollectionHeaderView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: "InactiveAppsHeader")
         
+        #if os(iOS)
         let refreshControl = UIRefreshControl()
         refreshControl.addTarget(self, action: #selector(MyAppsViewController.checkForUpdates(_:)), for: .primaryActionTriggered)
         self.collectionView.refreshControl = refreshControl
+        #endif
         
+        self.sideloadingProgressView = #if os(iOS)
         self.sideloadingProgressView = UIProgressView(progressViewStyle: .bar)
+        #else
+        self.sideloadingProgressView = UIProgressView(progressViewStyle: .default)
+        #endif
         self.sideloadingProgressView.translatesAutoresizingMaskIntoConstraints = false
         self.sideloadingProgressView.progressTintColor = .altPrimary
         self.sideloadingProgressView.progress = 0
@@ -112,9 +120,15 @@ class MyAppsViewController: UICollectionViewController, PeekPopPreviewing
                                          self.sideloadingProgressView.bottomAnchor.constraint(equalTo: navigationBar.bottomAnchor)])
         }
         
+        #if os(iOS)
         (self as PeekPopPreviewing).registerForPreviewing(with: self, sourceView: self.collectionView)
+        #endif
         
-        NotificationCenter.default.addObserver(self, selector: #selector(MyAppsViewController.didChangeAppIcon(_:)), name: UIApplication.didChangeAppIconNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(MyAppsViewController.didChangeAppIcon(_:)), name: #if os(iOS)
+        UIApplication.didChangeAppIconNotification
+        #else
+        NSNotification.Name("Did_Change_App_Icon")
+        #endif, object: nil)
     }
     
     override func viewIsAppearing(_ animated: Bool)
@@ -403,16 +417,8 @@ private extension MyAppsViewController
 
             // cell.bannerView.accessibilityLabel? += ". " + (formatter.string(from: currentDate, to: installedApp.expirationDate) ?? NSLocalizedString("Unknown", comment: "")) + " "
             
-            if let storeApp = installedApp.storeApp, storeApp.isPledgeRequired, !storeApp.isPledged
-            {
-                cell.bannerView.button.isEnabled = false
-                cell.bannerView.button.alpha = 0.5
-            }
-            else
-            {
-                cell.bannerView.button.isEnabled = true
-                cell.bannerView.button.alpha = 1.0
-            }
+            cell.bannerView.button.isEnabled = true
+            cell.bannerView.button.alpha = 1.0
             
             cell.bannerView.accessibilityLabel? += ". " + String(format: NSLocalizedString("Expires in %@", comment: ""), timeInterval!)
             
@@ -499,16 +505,8 @@ private extension MyAppsViewController
             cell.bannerView.button.addTarget(self, action: #selector(MyAppsViewController.activateApp(_:)), for: .primaryActionTriggered)
             cell.bannerView.button.accessibilityLabel = String(format: NSLocalizedString("Activate %@", comment: ""), installedApp.name)
             
-            if let storeApp = installedApp.storeApp, storeApp.isPledgeRequired, !storeApp.isPledged
-            {
-                cell.bannerView.button.isEnabled = false
-                cell.bannerView.button.alpha = 0.5
-            }
-            else
-            {
-                cell.bannerView.button.isEnabled = true
-                cell.bannerView.button.alpha = 1.0
-            }
+            cell.bannerView.button.isEnabled = true
+            cell.bannerView.button.alpha = 1.0
             
             // Make sure refresh button is correct size.
             cell.layoutIfNeeded()
@@ -780,17 +778,7 @@ private extension MyAppsViewController
         guard !installedApps.isEmpty else {
             let error: Error
             
-            if let altstoreApp = InstalledApp.fetchAltStore(in: DatabaseManager.shared.viewContext),
-               let storeApp = altstoreApp.storeApp, storeApp.isPledgeRequired && !storeApp.isPledged
-            {
-                // Assume the reason there are no apps is because we are no longer pledged to AltStore beta.
-                error = OperationError(.pledgeInactive(appName: altstoreApp.name))
-            }
-            else
-            {
-                // Otherwise, fall back to generic noInstalledApps.
-                error = RefreshError(.noInstalledApps)
-            }
+            error = RefreshError(.noInstalledApps)
             
             let toastView = ToastView(error: error)
             toastView.show(in: self)
@@ -807,7 +795,11 @@ private extension MyAppsViewController
             }
         }
         
-        let interaction = INInteraction.refreshAllApps()
+        #if os(iOS)
+                let interaction = INInteraction.refreshAllApps()
+                #else
+                return
+                #endif
         interaction.donate { (error) in
             guard let error = error else { return }
             print("Failed to donate intent \(interaction.intent).", error)
@@ -1515,6 +1507,7 @@ private extension MyAppsViewController
         }
     }
     
+    #if os(iOS)
     @objc func checkForUpdates(_ sender: UIRefreshControl)
     {
         guard !self.isCheckingForUpdates else { return }
@@ -1596,6 +1589,7 @@ private extension MyAppsViewController
             sender.endRefreshing()
         }
     }
+    #endif
     
     @objc func didChangeAppIcon(_ notification: Notification)
     {
@@ -1966,6 +1960,8 @@ extension MyAppsViewController
                 
         if let storeApp = installedApp.storeApp, storeApp.isPledgeRequired, !storeApp.isPledged
         {
+            // Pledge-retired: this branch is dead code since isPledgeRequired is always false.
+            // Kept for safety in case of stale database entries from older versions.
             let error = OperationError.pledgeInactive(appName: installedApp.name)
             title = error.localizedDescription
             
@@ -1997,6 +1993,7 @@ extension MyAppsViewController
         return menu
     }
     
+    #if os(iOS)
     override func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration?
     {
         guard !self.isRefreshingAllApps else { return nil }
@@ -2033,6 +2030,7 @@ extension MyAppsViewController
     {
         return self.collectionView(collectionView, previewForHighlightingContextMenuWithConfiguration: configuration)
     }
+    #endif
 }
 
 extension MyAppsViewController: UICollectionViewDelegateFlowLayout
@@ -2133,6 +2131,7 @@ extension MyAppsViewController: UICollectionViewDelegateFlowLayout
     }
 }
 
+#if os(iOS)
 extension MyAppsViewController: UICollectionViewDragDelegate
 {
     func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem]
@@ -2339,6 +2338,8 @@ extension MyAppsViewController: UICollectionViewDropDelegate
     }
 }
 
+#endif
+
 extension MyAppsViewController: NSFetchedResultsControllerDelegate
 {
     func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>)
@@ -2454,6 +2455,7 @@ extension MyAppsViewController: NSFetchedResultsControllerDelegate
     }
 }
 
+#if os(iOS)
 extension MyAppsViewController: UIDocumentPickerDelegate
 {
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL])
@@ -2501,7 +2503,9 @@ extension MyAppsViewController: UIViewControllerPreviewingDelegate
         self.performSegue(withIdentifier: "showUpdate", sender: cell)
     }
 }
+#endif
 
+#if os(iOS)
 extension MyAppsViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate
 {
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any])
@@ -2521,3 +2525,4 @@ extension MyAppsViewController: UIImagePickerControllerDelegate, UINavigationCon
         self._imagePickerInstalledApp = nil
     }
 }
+#endif
